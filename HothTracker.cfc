@@ -76,22 +76,22 @@ accessors=false
 			};
 			
 			// check if configured to track additional ColdFusion scopes
+			// note: IsNull(FORM) on ACF9.0.1 always returns true which is why I'm using IsDefined
 			local.scopes = UCase(variables.Config.getCaptureScopes());
-			
 			if (local.scopes!=""){
-				if (ListFind(local.scopes, "FORM") && !IsNull(FORM)) {
+				if (ListFind(local.scopes,"FORM") && isDefined("FORM")) {
 					local.e.scopes.FORM = FORM;
 				}
-				if (ListFind(local.scopes, "URL") && !IsNull(URL)) {
+				if (ListFind(local.scopes,"URL") && isDefined("URL")) {
 					local.e.scopes.URL = URL;
 				}
-				if (ListFind(local.scopes, "COOKIE") && !IsNull(COOKIE)) {
+				if (ListFind(local.scopes,"COOKIE") && isDefined("COOKIE")) {
 					local.e.scopes.COOKIE = COOKIE;
 				}
-				if (ListFind(local.scopes, "CGI") && !IsNull(CGI)) {
+				if (ListFind(local.scopes,"CGI") && isDefined("CGI")) {
 					local.e.scopes.CGI = CGI;
 				}
-				if (ListFind(local.scopes, "SESSION") && !IsNull(SESSION)) {
+				if (ListFind(local.scopes,"SESSION") && isDefined("SESSION")) {
 					local.e.scopes.SESSION = SESSION;
 				}
 			}
@@ -147,6 +147,13 @@ accessors=false
 						,"Address: " & local.url
 						,variables.Config.getEmailFooter()
 					];
+					
+					if ( StructKeyExists( local.e, "Context" ) ) {
+						ArrayAppend( local.emailBody, "Exception Context:" );
+						for ( local.thisContext in local.e.Context ) {
+							ArrayAppend( local.emailBody, local.thisContext.Template & " :: " & local.thisContext.Line );									
+						}
+					}
 
 					if ( variables.Config.getUseDefaultMailServer() ) {
 						local.Mail = new Mail(	 subject='Hoth Exception (' & variables.Config.getApplicationName() & ') ' & local.index.key
@@ -181,7 +188,7 @@ accessors=false
 						local.Mail.setType( "html" );
 						savecontent variable="local.emailBody" {
 							writeOutput( arrayToList( local.emailBody, "<br />" ) );
-							writeOutput( "<br />Exception Details:<br />");
+							writeOutput( "<br /><br />Exception Details:<br />");
 							writeDump( local.e );
 						}
 						local.Mail.setBody( local.emailBody );
